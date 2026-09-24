@@ -1,0 +1,702 @@
+<title>Needlyn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0D13;
+    --ink-2:#11151F;
+    --ink-3:#171C29;
+    --line:#252B3B;
+    --text:#ECEEF3;
+    --text-soft:#9AA2B8;
+    --text-faint:#5C6478;
+    --copper:#D08A5C;
+    --copper-bright:#EFAE81;
+    --signal:#5FE3D0;
+    --focus:#EFAE81;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.6;
+  }
+  ::selection{ background:var(--copper); color:var(--ink); }
+  a{ color:inherit; }
+  img,svg,canvas{ max-width:100%; display:block; }
+  h1,h2,h3{
+    font-family:"Sora", sans-serif;
+    font-weight:650;
+    letter-spacing:-0.015em;
+    text-wrap:balance;
+    margin:0;
+    color:var(--text);
+  }
+  .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding-inline: clamp(20px, 5vw, 56px);
+  }
+  .eyebrow{
+    font-family:"JetBrains Mono", monospace;
+    font-size:12.5px;
+    font-weight:500;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--signal);
+    display:flex; align-items:center; gap:9px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:7px; height:7px; border-radius:2px;
+    background:var(--copper);
+    display:inline-block;
+  }
+  button{ font-family:"Manrope", sans-serif; font-weight:700; cursor:pointer; }
+  button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{
+    outline: 2.5px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  /* ---------- HERO / NAV ---------- */
+  .hero{
+    position:relative;
+    min-height: 100svh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:var(--ink);
+  }
+  #netCanvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    z-index:0;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse at 50% 0%, transparent 0%, var(--ink) 78%);
+    pointer-events:none;
+    z-index:1;
+  }
+  .navshell{
+    position:relative; z-index:5;
+    padding-top:20px;
+  }
+  .navpill{
+    max-width:1040px;
+    margin:0 auto;
+    background: rgba(23,28,41,0.6);
+    border:1px solid rgba(255,255,255,0.09);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius:999px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 10px 10px 20px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:9px;
+    text-decoration:none;
+    font-family:"Sora", sans-serif;
+    font-weight:700;
+    font-size:17px;
+    color:var(--text);
+  }
+  .brand .dot{
+    width:9px; height:9px; border-radius:2px;
+    background: linear-gradient(135deg, var(--copper), var(--signal));
+    flex:none;
+  }
+  nav.links{
+    display:flex; align-items:center; gap:28px;
+    list-style:none; margin:0; padding:0;
+  }
+  nav.links a{
+    text-decoration:none; font-size:14px; font-weight:600; color:var(--text-soft);
+  }
+  nav.links a:hover{ color:var(--text); }
+  .cta-pill{
+    background:var(--text); color:var(--ink);
+    border:none; border-radius:999px;
+    padding:11px 20px; font-size:13.5px;
+    text-decoration:none; white-space:nowrap;
+    font-family:"Manrope",sans-serif; font-weight:700;
+    display:inline-block;
+  }
+  .cta-pill:hover{ background:var(--copper-bright); }
+  .navtoggle{
+    display:none;
+    background:none; border:1px solid rgba(255,255,255,0.15); border-radius:8px;
+    width:38px; height:38px; align-items:center; justify-content:center;
+    color:var(--text);
+  }
+  .navtoggle svg{ width:18px; height:18px; }
+
+  .hero-body{
+    position:relative; z-index:4;
+    flex:1;
+    display:flex; flex-direction:column; justify-content:center;
+    padding-block: 64px;
+  }
+  .hero-body .wrap{ width:100%; }
+  .hero h1{
+    font-size: clamp(38px, 6vw, 74px);
+    line-height:1.04;
+    max-width:16ch;
+  }
+  .rotator{
+    display:inline-block;
+    color:var(--copper-bright);
+    position:relative;
+  }
+  .hero p.lede{
+    font-size:18px;
+    color:var(--text-soft);
+    max-width:52ch;
+    margin-block: 22px 32px;
+  }
+  .hero-ctas{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .cta-lg{
+    background: linear-gradient(135deg, var(--copper), var(--copper-bright));
+    color:#241206; border:none; border-radius:12px;
+    padding:15px 26px; font-size:15.5px; text-decoration:none; display:inline-block;
+    font-weight:700;
+  }
+  .cta-lg:hover{ filter:brightness(1.08); }
+  .cta-ghost{
+    border:1.5px solid var(--line); color:var(--text);
+    background:transparent; border-radius:12px;
+    padding:14px 24px; font-size:15px; text-decoration:none; display:inline-block;
+    font-weight:600;
+  }
+  .cta-ghost:hover{ border-color:var(--text-soft); }
+
+  /* ---------- MARQUEE ---------- */
+  .marquee-band{
+    background:var(--ink-2);
+    border-block:1px solid var(--line);
+    overflow:hidden;
+    padding-block:20px;
+  }
+  .marquee-track{
+    display:flex; gap:48px; width:max-content;
+    animation: scroll-left 34s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .marquee-track{ animation:none; }
+  }
+  @keyframes scroll-left{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-50%); }
+  }
+  .stack-chip{
+    font-family:"JetBrains Mono", monospace;
+    font-size:14px;
+    color:var(--text-faint);
+    white-space:nowrap;
+    display:flex; align-items:center; gap:10px;
+  }
+  .stack-chip b{ color:var(--text-soft); font-weight:600; }
+  .stack-chip::before{ content:"//"; color:var(--copper); }
+
+  /* ---------- SECTIONS ---------- */
+  section{ padding-block: clamp(56px, 8vw, 100px); }
+  .sec-head{ max-width:620px; margin-bottom:clamp(32px,4vw,52px); }
+  .sec-head h2{ font-size:clamp(28px,3.4vw,42px); margin-top:12px; }
+  .sec-head p{ color:var(--text-soft); font-size:16.5px; margin-top:14px; }
+
+  /* CAPABILITIES */
+  .cap-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .cap-card{
+    background:var(--ink-2);
+    padding:32px 26px;
+    display:flex; flex-direction:column; gap:16px;
+    min-height:210px;
+  }
+  .cap-card .num{ font-family:"JetBrains Mono",monospace; font-size:13px; color:var(--copper); }
+  .cap-card .icon{ width:34px; height:34px; color:var(--signal); }
+  .cap-card h3{ font-size:19px; }
+  .cap-card p{ color:var(--text-soft); font-size:14.5px; margin:0; }
+
+  /* PROCESS */
+  .process-grid{
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:clamp(18px,3vw,28px);
+  }
+  .proc-step{ border-top:2px solid var(--copper); padding-top:16px; }
+  .proc-step .num{ font-family:"JetBrains Mono",monospace; font-size:14px; color:var(--copper); }
+  .proc-step h3{ font-size:18px; margin-block:8px 6px; }
+  .proc-step p{ color:var(--text-soft); font-size:14px; margin:0; }
+
+  /* WHY */
+  .why-grid{
+    display:grid; grid-template-columns: 0.9fr 1.1fr;
+    gap:clamp(28px,5vw,64px); align-items:start;
+  }
+  .why-list{ display:flex; flex-direction:column; gap:24px; }
+  .why-item{ display:flex; gap:16px; }
+  .why-item .icon{ width:24px; height:24px; color:var(--signal); flex:none; margin-top:3px; }
+  .why-item h3{ font-size:17px; margin-bottom:4px; }
+  .why-item p{ margin:0; color:var(--text-soft); font-size:14.5px; }
+
+  /* FAQ */
+  .faq-list{ border-top:1px solid var(--line); }
+  .faq-item{ border-bottom:1px solid var(--line); }
+  .faq-q{
+    width:100%; text-align:left; background:none; border:none; color:var(--text);
+    padding:22px 0; display:flex; justify-content:space-between; align-items:center; gap:20px;
+    font-family:"Sora", sans-serif; font-size:16.5px; font-weight:600;
+  }
+  .faq-q .plus{ font-family:"JetBrains Mono",monospace; color:var(--copper); font-size:20px; flex:none; transition:transform .2s ease; }
+  .faq-item[data-open="true"] .plus{ transform:rotate(45deg); }
+  .faq-a{
+    max-height:0; overflow:hidden; transition: max-height .28s ease;
+  }
+  .faq-a p{ color:var(--text-soft); font-size:15px; padding-bottom:22px; max-width:65ch; margin:0; }
+
+  /* CONTACT */
+  .contact-card{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:clamp(28px,5vw,56px);
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:clamp(28px,4vw,48px); align-items:start;
+  }
+  .contact-card h2{ font-size:clamp(26px,3vw,36px); }
+  .contact-card p{ color:var(--text-soft); margin-top:12px; font-size:15.5px; max-width:40ch; }
+  .contact-meta{ margin-top:26px; display:flex; flex-direction:column; gap:10px; }
+  .contact-meta a{ font-family:"JetBrains Mono",monospace; font-size:14.5px; color:var(--signal); text-decoration:none; }
+  form.contact{ display:flex; flex-direction:column; gap:12px; }
+  .field-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .field-row > *{ flex:1 1 180px; }
+  form.contact input, form.contact select, form.contact textarea{
+    width:100%; font-family:"Manrope",sans-serif; font-size:15px;
+    padding:13px 15px; border-radius:12px;
+    border:1.5px solid var(--line); background:var(--ink);
+    color:var(--text);
+  }
+  form.contact textarea{ resize:vertical; min-height:96px; }
+  form.contact input::placeholder, form.contact textarea::placeholder{ color:var(--text-faint); }
+  form.contact button{
+    background:var(--copper); color:#241206; border:none; border-radius:12px;
+    padding:14px 20px; font-size:15.5px;
+  }
+  form.contact button:hover{ background:var(--copper-bright); }
+  .fine{ font-size:12.5px; color:var(--text-faint); margin-top:2px; }
+
+  /* FOOTER */
+  footer{ border-top:1px solid var(--line); padding-block:36px; }
+  .foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+  footer p{ font-size:13.5px; color:var(--text-faint); margin:0; }
+  .foot-links{ display:flex; gap:20px; list-style:none; padding:0; margin:0; }
+  .foot-links a{ font-size:13.5px; color:var(--text-soft); text-decoration:none; }
+  .foot-links a:hover{ color:var(--copper-bright); }
+
+  @media (max-width: 900px){
+    nav.links{ display:none; }
+    .navtoggle{ display:flex; }
+    .cap-grid{ grid-template-columns: 1fr 1fr; }
+    .process-grid{ grid-template-columns: 1fr 1fr; }
+    .why-grid{ grid-template-columns:1fr; }
+    .contact-card{ grid-template-columns:1fr; }
+  }
+  @media (max-width: 560px){
+    .cap-grid{ grid-template-columns: 1fr; }
+    .process-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+
+<header class="hero">
+  <canvas id="netCanvas"></canvas>
+  <div class="navshell wrap">
+    <div class="navpill">
+      <a class="brand" href="#top"><span class="dot"></span>needlyn</a>
+      <nav class="links">
+        <a href="#capabilities">Capabilities</a>
+        <a href="#process">Process</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact" class="cta-pill">Start a project</a>
+      </nav>
+      <button class="navtoggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="wrap" id="mobileMenu" style="display:none; padding-top:10px;">
+      <div style="background:rgba(23,28,41,0.9); border:1px solid rgba(255,255,255,0.09); border-radius:20px; padding:18px; display:flex; flex-direction:column; gap:16px;">
+        <a href="#capabilities" style="text-decoration:none; color:var(--text); font-weight:600;">Capabilities</a>
+        <a href="#process" style="text-decoration:none; color:var(--text); font-weight:600;">Process</a>
+        <a href="#faq" style="text-decoration:none; color:var(--text); font-weight:600;">FAQ</a>
+        <a href="#contact" class="cta-pill" style="text-align:center;">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-body">
+    <div class="wrap">
+      <p class="eyebrow">Software · AI · Cloud · Robotics</p>
+      <h1 style="margin-top:16px;">We engineer<br><span class="rotator" id="rotator">software.</span></h1>
+      <p class="lede">Needlyn is a full-stack technology partner — we design, build and operate software, mobile apps, robotics and AI systems for companies that need to move at the speed of the roadmap, not the hiring pipeline.</p>
+      <div class="hero-ctas">
+        <a href="#contact" class="cta-lg">Start a project</a>
+        <a href="#capabilities" class="cta-ghost">See what we build</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="marquee-band">
+    <div class="wrap" style="overflow:hidden;">
+      <div class="marquee-track" id="marqueeTrack">
+        <span class="stack-chip"><b>Python</b> · TensorFlow · PyTorch</span>
+        <span class="stack-chip"><b>React Native</b> · Swift · Kotlin</span>
+        <span class="stack-chip"><b>AWS</b> · GCP · Terraform</span>
+        <span class="stack-chip"><b>ROS 2</b> · Embedded C++</span>
+        <span class="stack-chip"><b>Kubernetes</b> · Docker</span>
+        <span class="stack-chip"><b>Next.js</b> · Node · PostgreSQL</span>
+        <span class="stack-chip"><b>LLM APIs</b> · Vector search</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="capabilities">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Capabilities</p>
+        <h2>One team, every layer of the stack.</h2>
+        <p>Most agencies specialize in one layer and subcontract the rest. We keep software, hardware and infrastructure under one roof so nothing gets lost in translation between teams.</p>
+      </div>
+      <div class="cap-grid">
+        <div class="cap-card">
+          <p class="num">01</p>
+          <svg class="icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="9" width="28" height="19" rx="2"/><path d="M14 33h12M20 28v5"/><path d="M15 14l-3 3 3 3M25 14l3 3-3 3"/></svg>
+          <h3>Software development</h3>
+          <p>Web platforms and internal tools built on typed, tested foundations meant to outlive the first release.</p>
+        </div>
+        <div class="cap-card">
+          <p class="num">02</p>
+          <svg class="icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="11" y="5" width="18" height="30" rx="3"/><line x1="11" y1="10" x2="29" y2="10"/><line x1="11" y1="28" x2="29" y2="28"/></svg>
+          <h3>Mobile app development</h3>
+          <p>Native iOS, Android and cross-platform apps, from prototype through app-store operations.</p>
+        </div>
+        <div class="cap-card">
+          <p class="num">03</p>
+          <svg class="icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="12" y="16" width="16" height="14" rx="2"/><circle cx="17" cy="22" r="1.6" fill="currentColor" stroke="none"/><circle cx="23" cy="22" r="1.6" fill="currentColor" stroke="none"/><path d="M20 16v-5M15 8h10"/></svg>
+          <h3>Robotics engineering</h3>
+          <p>Perception, motion control and fleet software for robots that have to work outside a lab.</p>
+        </div>
+        <div class="cap-card">
+          <p class="num">04</p>
+          <svg class="icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="20" cy="20" r="4"/><circle cx="20" cy="8" r="2.4"/><circle cx="32" cy="27" r="2.4"/><circle cx="8" cy="27" r="2.4"/><path d="M20 12v4M22.8 22.2l7.5 3.4M17.2 22.2l-7.5 3.4"/></svg>
+          <h3>AI &amp; machine learning</h3>
+          <p>Applied ML and LLM-based systems shipped as product features, not research demos.</p>
+        </div>
+        <div class="cap-card">
+          <p class="num">05</p>
+          <svg class="icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 26a6 6 0 010-12 8 8 0 0115.4-2.4A6.5 6.5 0 0128 26H12z"/></svg>
+          <h3>Cloud &amp; DevOps</h3>
+          <p>Infrastructure-as-code, CI/CD and on-call runbooks so the system you ship keeps running at 3am.</p>
+        </div>
+        <div class="cap-card">
+          <p class="num">06</p>
+          <svg class="icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6l12 6v8c0 8-5.5 13.5-12 15-6.5-1.5-12-7-12-15v-8z"/><path d="M15 20l4 4 7-8"/></svg>
+          <h3>AI apps for enterprise</h3>
+          <p>Internal copilots, automation and data products that plug into the systems you already run on.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="process">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">How we work</p>
+        <h2>Four stages, no black box.</h2>
+      </div>
+      <div class="process-grid">
+        <div class="proc-step">
+          <p class="num">01</p>
+          <h3>Discover &amp; scope</h3>
+          <p>We map the problem, constraints and success metrics before a line of code is written.</p>
+        </div>
+        <div class="proc-step">
+          <p class="num">02</p>
+          <h3>Design &amp; architect</h3>
+          <p>System design and technical architecture reviewed with you before build begins.</p>
+        </div>
+        <div class="proc-step">
+          <p class="num">03</p>
+          <h3>Build &amp; iterate</h3>
+          <p>Weekly demos against a visible roadmap — you see progress, not status reports.</p>
+        </div>
+        <div class="proc-step">
+          <p class="num">04</p>
+          <h3>Ship &amp; operate</h3>
+          <p>Launch support and an optional retainer to monitor, maintain and extend the system.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap why-grid">
+      <div>
+        <p class="eyebrow">Why needlyn</p>
+        <h2 style="font-size:clamp(26px,3vw,36px); margin-top:12px;">Built for teams who've been burned by agencies before.</h2>
+      </div>
+      <div class="why-list">
+        <div class="why-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          <div><h3>Senior engineers only</h3><p>No bench of juniors learning on your budget — every engineer on your project has shipped production systems before.</p></div>
+        </div>
+        <div class="why-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          <div><h3>Fixed scope, fixed price, or retainer</h3><p>Pick the engagement model that fits the project — we quote in writing before work starts, not after.</p></div>
+        </div>
+        <div class="why-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          <div><h3>You own everything</h3><p>Code, models and infrastructure are yours from day one — full repo access, no vendor lock-in.</p></div>
+        </div>
+        <div class="why-item">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          <div><h3>Cloud-native and AI-first by default</h3><p>Every system we ship is built to scale on cloud infrastructure and designed to take advantage of AI where it earns its place — not bolted on after.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Before you reach out.</h2>
+      </div>
+      <div class="faq-list" id="faqList">
+        <div class="faq-item" data-open="false">
+          <button class="faq-q"><span>What size of project do you take on?</span><span class="plus mono">+</span></button>
+          <div class="faq-a"><p>From a focused 4-week MVP to a multi-year platform build. If it needs software, mobile, robotics, AI or cloud engineering, it's in scope — tell us the constraints and we'll tell you honestly if we're the right fit.</p></div>
+        </div>
+        <div class="faq-item" data-open="false">
+          <button class="faq-q"><span>How is pricing structured?</span><span class="plus mono">+</span></button>
+          <div class="faq-a"><p>Fixed-price for well-scoped builds, time-and-materials for evolving product work, and monthly retainers for ongoing operation and support. You'll always see the number in writing before we start.</p></div>
+        </div>
+        <div class="faq-item" data-open="false">
+          <button class="faq-q"><span>Do you sign NDAs?</span><span class="plus mono">+</span></button>
+          <div class="faq-a"><p>Yes, as standard before any discovery call that touches your product or data. IP and code ownership transfers to you on delivery.</p></div>
+        </div>
+        <div class="faq-item" data-open="false">
+          <button class="faq-q"><span>Can you take over an existing codebase?</span><span class="plus mono">+</span></button>
+          <div class="faq-a"><p>Yes — we start with a technical audit so you know exactly what you're inheriting before we commit to a scope or timeline.</p></div>
+        </div>
+        <div class="faq-item" data-open="false">
+          <button class="faq-q"><span>What happens after launch?</span><span class="plus mono">+</span></button>
+          <div class="faq-a"><p>You can walk away with the full handover, or keep us on retainer for monitoring, incident response and continued feature work — your choice, month to month.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="contact-card">
+        <div>
+          <p class="eyebrow">Start a project</p>
+          <h2>Tell us what you're building.</h2>
+          <p>Share a few details and we'll reply within two working days with next steps — or a straight answer if we're not the right fit.</p>
+          <div class="contact-meta">
+            <a href="mailto:hello@needlyn.com">hello@needlyn.com</a>
+            <a href="mailto:hello@needlyn.in">hello@needlyn.in</a>
+          </div>
+        </div>
+        <div>
+          <form class="contact" id="contactForm">
+            <div class="field-row">
+              <input type="text" id="cf-name" placeholder="Your name" required autocomplete="name">
+              <input type="text" id="cf-company" placeholder="Company" autocomplete="organization">
+            </div>
+            <input type="email" id="cf-email" placeholder="Work email" required autocomplete="email">
+            <select id="cf-type" required>
+              <option value="" disabled selected>What do you need?</option>
+              <option>Software development</option>
+              <option>Mobile app development</option>
+              <option>Robotics engineering</option>
+              <option>AI / machine learning</option>
+              <option>Cloud &amp; DevOps</option>
+              <option>Not sure yet</option>
+            </select>
+            <textarea id="cf-message" placeholder="A few lines about the project" required></textarea>
+            <button type="submit">Send &amp; open email</button>
+            <p class="fine">Opens your email client with the details prefilled — nothing is stored on this page.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <a class="brand" href="#top"><span class="dot"></span>needlyn</a>
+    <ul class="foot-links">
+      <li><a href="#capabilities">Capabilities</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <p>&copy; <span id="year"></span> Needlyn. Software, robotics and AI, built to run.</p>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // mobile nav
+  var navToggle = document.getElementById('navToggle');
+  var mobileMenu = document.getElementById('mobileMenu');
+  navToggle.addEventListener('click', function(){
+    var open = mobileMenu.style.display === 'block';
+    mobileMenu.style.display = open ? 'none' : 'block';
+    navToggle.setAttribute('aria-expanded', String(!open));
+  });
+  mobileMenu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ mobileMenu.style.display = 'none'; });
+  });
+
+  // rotating capability word
+  var words = ['software.', 'mobile apps.', 'robotics.', 'AI systems.', 'cloud infra.'];
+  var wi = 0;
+  var rotEl = document.getElementById('rotator');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduceMotion){
+    setInterval(function(){
+      wi = (wi + 1) % words.length;
+      rotEl.style.opacity = 0;
+      setTimeout(function(){
+        rotEl.textContent = words[wi];
+        rotEl.style.opacity = 1;
+      }, 220);
+    }, 2200);
+    rotEl.style.transition = 'opacity .22s ease';
+  }
+
+  // marquee duplicate for seamless loop
+  var track = document.getElementById('marqueeTrack');
+  track.innerHTML += track.innerHTML;
+
+  // faq accordion
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var ans = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.getAttribute('data-open') === 'true';
+      document.querySelectorAll('.faq-item').forEach(function(other){
+        other.setAttribute('data-open','false');
+        other.querySelector('.faq-a').style.maxHeight = null;
+      });
+      if(!isOpen){
+        item.setAttribute('data-open','true');
+        ans.style.maxHeight = ans.scrollHeight + 'px';
+      }
+    });
+  });
+
+  // contact form -> mailto
+  document.getElementById('contactForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = document.getElementById('cf-name').value;
+    var company = document.getElementById('cf-company').value;
+    var email = document.getElementById('cf-email').value;
+    var type = document.getElementById('cf-type').value;
+    var message = document.getElementById('cf-message').value;
+    var subject = encodeURIComponent('New project inquiry: ' + type);
+    var body = encodeURIComponent(
+      'Name: ' + name + '\n' +
+      'Company: ' + company + '\n' +
+      'Email: ' + email + '\n' +
+      'Project type: ' + type + '\n\n' +
+      message
+    );
+    window.location.href = 'mailto:hello@needlyn.com?subject=' + subject + '&body=' + body;
+  });
+
+  // canvas network animation
+  (function(){
+    var canvas = document.getElementById('netCanvas');
+    var ctx = canvas.getContext('2d');
+    var hero = document.querySelector('.hero');
+    var w, h, nodes = [];
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function resize(){
+      w = canvas.width = hero.offsetWidth * devicePixelRatio;
+      h = canvas.height = hero.offsetHeight * devicePixelRatio;
+      canvas.style.width = hero.offsetWidth + 'px';
+      canvas.style.height = hero.offsetHeight + 'px';
+      var count = Math.min(70, Math.floor((hero.offsetWidth * hero.offsetHeight) / 22000));
+      nodes = [];
+      for(var i=0;i<count;i++){
+        nodes.push({
+          x: Math.random()*w,
+          y: Math.random()*h,
+          vx: (Math.random()-0.5) * 0.25 * devicePixelRatio,
+          vy: (Math.random()-0.5) * 0.25 * devicePixelRatio,
+          r: (Math.random()*1.6 + 1) * devicePixelRatio
+        });
+      }
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,w,h);
+      for(var i=0;i<nodes.length;i++){
+        var n = nodes[i];
+        if(!reduce){
+          n.x += n.vx; n.y += n.vy;
+          if(n.x < 0 || n.x > w) n.vx *= -1;
+          if(n.y < 0 || n.y > h) n.vy *= -1;
+        }
+      }
+      var maxDist = 150 * devicePixelRatio;
+      for(var i=0;i<nodes.length;i++){
+        for(var j=i+1;j<nodes.length;j++){
+          var a = nodes[i], b = nodes[j];
+          var dx = a.x-b.x, dy = a.y-b.y;
+          var dist = Math.sqrt(dx*dx+dy*dy);
+          if(dist < maxDist){
+            var op = (1 - dist/maxDist) * 0.35;
+            ctx.strokeStyle = 'rgba(208,138,92,' + op + ')';
+            ctx.lineWidth = 1 * devicePixelRatio;
+            ctx.beginPath();
+            ctx.moveTo(a.x,a.y);
+            ctx.lineTo(b.x,b.y);
+            ctx.stroke();
+          }
+        }
+      }
+      for(var i=0;i<nodes.length;i++){
+        var n = nodes[i];
+        ctx.fillStyle = 'rgba(95,227,208,0.85)';
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+      if(!reduce) requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+    window.addEventListener('resize', resize);
+  })();
+</script>
